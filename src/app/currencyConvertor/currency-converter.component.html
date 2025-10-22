@@ -1,0 +1,57 @@
+<div class="currency-converter">
+  <div class="container">
+    <h1 class="title">Euro Multi-Currency Exchange Rate Converter</h1>
+
+    <!-- 金额输入 -->
+    <div class="input-group">
+      <label>Amount：</label>
+      <input type="number" [(ngModel)]="amount" min="0" step="any" />
+    </div>
+
+    <!-- 反向转换选择 -->
+    <div class="direction-selector">
+      <label>Direction：</label>
+      <select [(ngModel)]="baseCurrency" (change)="fetchRates()">
+        <option *ngFor="let cur of availableCurrencies" [value]="cur">{{ cur }}</option>
+      </select>
+      <span class="arrow">→</span>
+      <span class="target-label">{{ targetLabel }}</span>
+    </div>
+
+    <!-- 目标货币选择 -->
+    <div class="currency-selection">
+      <label>Select currencies to display：</label>
+      <div class="currency-grid">
+        <div class="currency-item" *ngFor="let cur of selectableCurrencies">
+          <input type="checkbox" [(ngModel)]="selectedCurrencies[cur]" (change)="saveSelectedCurrencies()" />
+          <span>{{ cur }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 刷新按钮 -->
+    <button class="refresh-button" (click)="fetchRates()">
+      Refresh Rates
+    </button>
+
+    <!-- 加载提示 -->
+    <div *ngIf="loading" class="loading">Loading exchange rates...</div>
+
+    <!-- 汇率显示 -->
+    <div *ngIf="!loading" class="rates-display">
+      <div class="rate-item" *ngFor="let item of displayRates">
+        <span class="currency-code">{{ item.label }}</span>
+        <span class="converted-amount">{{ (amount * item.value) | number:'1.4-4' }}</span>
+      </div>
+    </div>
+
+    <!-- 更新时间 -->
+    <div *ngIf="!loading && lastUpdated" class="last-updated">
+      Last updated at: {{ lastUpdated | date:'medium' }} (automatically refreshed every minute)
+    </div>
+
+    <div class="api-credit">
+      Real-time exchange rate data from fxratesapi.com
+    </div>
+  </div>
+</div>
