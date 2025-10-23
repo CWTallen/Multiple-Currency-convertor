@@ -1,6 +1,6 @@
 <div class="currency-converter">
   <div class="container">
-    <h1 class="title">Euro Multi-Currency Exchange Rate Converter</h1>
+    <h1 class="title">Multi-Currency Exchange Rate Converter</h1>
 
     <!-- 金额输入 -->
     <div class="input-group">
@@ -8,46 +8,53 @@
       <input type="number" [(ngModel)]="amount" min="0" step="any" />
     </div>
 
-    <!-- 反向转换选择 -->
+    <!-- 基础货币选择 -->
     <div class="direction-selector">
-      <label>Direction：</label>
-      <select [(ngModel)]="baseCurrency" (change)="fetchRates()">
+      <label>Base Currency：</label>
+      <select [(ngModel)]="baseCurrency" (change)="onBaseCurrencyChange()">
         <option *ngFor="let cur of availableCurrencies" [value]="cur">{{ cur }}</option>
       </select>
       <span class="arrow">→</span>
-      <span class="target-label">{{ targetLabel }}</span>
+      <span class="target-label">Target Currencies</span>
     </div>
 
     <!-- 目标货币选择 -->
     <div class="currency-selection">
-      <label>Select currencies to display：</label>
+      <label>Select target currencies to display：</label>
       <div class="currency-grid">
-        <div class="currency-item" *ngFor="let cur of selectableCurrencies">
-          <input type="checkbox" [(ngModel)]="selectedCurrencies[cur]" (change)="saveSelectedCurrencies()" />
-          <span>{{ cur }}</span>
+        <div class="currency-item" *ngFor="let cur of availableCurrencies">
+          <input type="checkbox" [(ngModel)]="selectedCurrencies[cur]" (change)="saveSelectedCurrencies()" 
+                 [disabled]="cur === baseCurrency" />
+          <span [class.disabled]="cur === baseCurrency">{{ cur }}</span>
         </div>
       </div>
     </div>
 
     <!-- 刷新按钮 -->
-    <button class="refresh-button" (click)="fetchRates()">
+    <button class="refresh-button" (click)="forceRefreshRates()">
       Refresh Rates
     </button>
 
     <!-- 加载提示 -->
     <div *ngIf="loading" class="loading">Loading exchange rates...</div>
+    
+    <!-- 速率限制警告 -->
+    <div *ngIf="this.rateLimitError" class="rate-limit-warning">
+      ⚠️ Rate limit reached. Using cached data. Please wait before refreshing again.
+    </div>
 
     <!-- 汇率显示 -->
     <div *ngIf="!loading" class="rates-display">
       <div class="rate-item" *ngFor="let item of displayRates">
         <span class="currency-code">{{ item.label }}</span>
-        <span class="converted-amount">{{ (amount * item.value) | number:'1.4-4' }}</span>
+        <span class="converted-amount">{{ (amount * item.value) | number:'1.2-2':'en-US' }}</span>
+        <span class="rate-info">(1 {{ baseCurrency }} = {{ item.value | number:'1.4-4':'en-US' }} {{ item.label }})</span>
       </div>
     </div>
 
     <!-- 更新时间 -->
     <div *ngIf="!loading && lastUpdated" class="last-updated">
-      Last updated at: {{ lastUpdated | date:'medium' }} (automatically refreshed every minute)
+      Last updated at: {{ lastUpdated | date:'medium' }} (automatically refreshed every 5 minutes)
     </div>
 
     <div class="api-credit">

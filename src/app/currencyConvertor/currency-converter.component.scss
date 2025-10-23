@@ -191,6 +191,11 @@
         font-weight: 500;
         color: #374151;
         font-size: 0.95rem;
+
+        &.disabled {
+          color: #9ca3af;
+          opacity: 0.6;
+        }
       }
     }
   }
@@ -244,6 +249,19 @@
   animation: pulse 1.5s ease-in-out infinite;
 }
 
+.rate-limit-warning {
+  text-align: center;
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: fadeInUp 0.8s ease-out;
+}
+
 .rates-display {
   animation: fadeInUp 0.8s ease-out 1.2s both;
 
@@ -275,6 +293,13 @@
       font-size: 1.2rem;
       color: #667eea;
       font-family: 'Monaco', 'Menlo', monospace;
+    }
+
+    .rate-info {
+      font-size: 0.8rem;
+      color: #6b7280;
+      font-style: italic;
+      margin-left: 0.5rem;
     }
   }
 }
@@ -431,5 +456,11 @@
   .last-updated {
     color: #9ca3af;
     border-color: rgba(75, 85, 99, 0.5);
+  }
+
+  .rate-limit-warning {
+    color: #f87171;
+    background: rgba(220, 38, 38, 0.15);
+    border-color: rgba(220, 38, 38, 0.3);
   }
 }
