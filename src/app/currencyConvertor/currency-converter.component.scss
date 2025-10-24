@@ -129,23 +129,6 @@
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
   }
-
-  .arrow {
-    font-size: 1.5rem;
-    color: #667eea;
-    font-weight: bold;
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  .target-label {
-    font-weight: 600;
-    color: #374151;
-    padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    border-radius: 8px;
-    font-size: 0.9rem;
-  }
 }
 
 .currency-selection {
@@ -200,6 +183,7 @@
     }
   }
 }
+
 
 .refresh-button {
   width: 100%;
@@ -370,30 +354,222 @@
 // Responsive design
 @media (max-width: 640px) {
   .currency-converter {
-    padding: 1rem;
+    padding: 0.5rem;
+    min-height: 100vh;
   }
 
   .container {
-    padding: 1.5rem;
-    border-radius: 20px;
+    padding: 1rem;
+    border-radius: 16px;
+    max-width: 100%;
+    margin: 0;
   }
 
   .title {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
+  }
+
+  .input-group {
+    margin-bottom: 1rem;
+
+    label {
+      font-size: 0.9rem;
+      margin-bottom: 0.4rem;
+    }
+
+    input {
+      padding: 0.8rem;
+      font-size: 1rem;
+      border-radius: 10px;
+    }
   }
 
   .direction-selector {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
     align-items: stretch;
+    margin-bottom: 1rem;
 
-    .arrow {
-      transform: rotate(90deg);
+    label {
+      font-size: 0.9rem;
+      margin-bottom: 0.4rem;
+    }
+
+    select {
+      padding: 0.8rem;
+      font-size: 1rem;
+      border-radius: 10px;
+      width: 100%;
     }
   }
 
-  .currency-grid {
-    grid-template-columns: 1fr;
+  .currency-selection {
+    margin-bottom: 1rem;
+
+    label {
+      font-size: 0.9rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .currency-grid {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+
+      .currency-item {
+        padding: 0.6rem;
+        border-radius: 8px;
+
+        input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+        }
+
+        span {
+          font-size: 0.9rem;
+        }
+      }
+    }
+  }
+
+  .refresh-button {
+    padding: 0.8rem;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 10px;
+  }
+
+  .rates-display {
+    .rate-item {
+      padding: 0.8rem;
+      margin-bottom: 0.6rem;
+      border-radius: 10px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.3rem;
+
+      .currency-code {
+        font-size: 1rem;
+      }
+
+      .converted-amount {
+        font-size: 1.1rem;
+      }
+
+      .rate-info {
+        font-size: 0.75rem;
+        margin-left: 0;
+        margin-top: 0.2rem;
+      }
+    }
+  }
+
+  .last-updated {
+    font-size: 0.8rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+  }
+
+  .api-credit {
+    font-size: 0.7rem;
+    margin-top: 0.4rem;
+  }
+
+  .rate-limit-warning {
+    font-size: 0.85rem;
+    padding: 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+}
+
+// Extra small screens (phones in portrait)
+@media (max-width: 480px) {
+  .currency-converter {
+    padding: 0.25rem;
+  }
+
+  .container {
+    padding: 0.8rem;
+    border-radius: 12px;
+  }
+
+  .title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .input-group {
+    margin-bottom: 0.8rem;
+
+    input {
+      padding: 0.7rem;
+      font-size: 0.95rem;
+    }
+  }
+
+  .direction-selector {
+    margin-bottom: 0.8rem;
+
+    select {
+      padding: 0.7rem;
+      font-size: 0.95rem;
+    }
+  }
+
+  .currency-selection {
+    margin-bottom: 0.8rem;
+
+    .currency-grid {
+      .currency-item {
+        padding: 0.5rem;
+
+        input[type="checkbox"] {
+          width: 14px;
+          height: 14px;
+        }
+
+        span {
+          font-size: 0.85rem;
+        }
+      }
+    }
+  }
+
+  .refresh-button {
+    padding: 0.7rem;
+    font-size: 0.95rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .rates-display {
+    .rate-item {
+      padding: 0.7rem;
+      margin-bottom: 0.5rem;
+
+      .currency-code {
+        font-size: 0.95rem;
+      }
+
+      .converted-amount {
+        font-size: 1rem;
+      }
+
+      .rate-info {
+        font-size: 0.7rem;
+      }
+    }
+  }
+
+  .last-updated {
+    font-size: 0.75rem;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+  }
+
+  .api-credit {
+    font-size: 0.65rem;
+    margin-top: 0.3rem;
   }
 }
 
@@ -406,6 +582,7 @@
 
   .title {
     background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -439,6 +616,7 @@
       color: #f3f4f6;
     }
   }
+
 
   .rate-item {
     background: rgba(31, 41, 55, 0.6);

@@ -14,8 +14,6 @@
       <select [(ngModel)]="baseCurrency" (change)="onBaseCurrencyChange()">
         <option *ngFor="let cur of availableCurrencies" [value]="cur">{{ cur }}</option>
       </select>
-      <span class="arrow">→</span>
-      <span class="target-label">Target Currencies</span>
     </div>
 
     <!-- 目标货币选择 -->
