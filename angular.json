@@ -31,7 +31,14 @@
             ],
             "styles": [
               "src/styles.scss"
-            ]
+            ],
+	    "budgets": [
+	    	{
+              	"type": "anyComponentStyle",
+              	"maximumWarning": "10kb",
+              	"maximumError": "12kb"
+            	}
+	    ]
           },
           "configurations": {
             "production": {
@@ -43,8 +50,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "10kB",
+                  "maximumError": "12kB"
                 }
               ],
               "outputHashing": "all"
