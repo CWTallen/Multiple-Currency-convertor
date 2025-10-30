@@ -1,1 +1,73 @@
-/* You can add global styles to this file, and also import other style files */
+// Define custom variables for colors and fonts
+$font-family: 'OpenSans', sans-serif;
+
+// Apply global styles
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: $font-family;
+  font-weight: 400;
+}
+
+
+/* OpenSans Light */
+@font-face {
+    font-family: 'OpenSans';
+    src: url('./assets/fonts/OpenSans-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+  }
+  
+  /* OpenSans Light Italic */
+  @font-face {
+    font-family: 'OpenSans';
+    src: url('./assets/fonts/OpenSans-LightItalic.ttf') format('truetype');
+    font-weight: 300;
+    font-style: italic;
+    font-display: swap;
+  }
+  
+  /* OpenSans Regular */
+  @font-face {
+    font-family: 'OpenSans';
+    src: url('./assets/fonts/OpenSans-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  
+  /* OpenSans Italic */
+  @font-face {
+    font-family: 'OpenSans';
+    src: url('./assets/fonts/OpenSans-Italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+  
+  /* OpenSans Bold */
+  @font-face {
+    font-family: 'OpenSans';
+    src: url('./assets/fonts/OpenSans-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+  
+  /* OpenSans Bold Italic */
+  @font-face {
+    font-family: 'OpenSans';
+    src: url('./assets/fonts/OpenSans-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+  }
+  
+  /* Utility classes */
+  .opensans-light { font-family: 'OpenSans', sans-serif; font-weight: 300; }
+  .opensans-regular { font-family: 'OpenSans', sans-serif; font-weight: 400; }
+  .opensans-bold { font-family: 'OpenSans', sans-serif; font-weight: 700; }
+  .opensans-italic { font-style: italic; }
