@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 export class CurrencyConverterComponent implements OnInit, OnDestroy {
   amount = 1;
   baseCurrency = 'EUR';
-  availableCurrencies = ['EUR', 'HKD', 'CNY', 'USD', 'JPY', 'GBP'];
+  availableCurrencies = ['EUR', 'HKD', 'CNY', 'USD', 'JPY', 'GBP','CHF'];
   selectedCurrencies: any = {};
   rates: any = {};
   displayRates: { label: string; value: number }[] = [];
