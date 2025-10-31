@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "demo": {
+    "Space-Odyssey": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -23,11 +23,10 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "outputPath": "dist/Space-Odyssey",
             "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              }
+              "src/favicon.ico",
+              "src/assets"
             ],
             "styles": [
               "src/styles.scss"
@@ -68,10 +67,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "demo:build:production"
+              "buildTarget": "Space-Odyssey:build:production"
             },
             "development": {
-              "buildTarget": "demo:build:development"
+              "buildTarget": "Space-Odyssey:build:development"
             }
           },
           "defaultConfiguration": "development"
