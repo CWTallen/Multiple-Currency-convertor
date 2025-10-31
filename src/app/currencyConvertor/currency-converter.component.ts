@@ -20,10 +20,11 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
   loading = false;
   lastUpdated: Date | null = null;
   refreshInterval: any;
-  
+  previousBaseCurrency: string | null = null;
+
   // Rate limiting and caching
   private lastFetchTime: number = 0;
-  private readonly MIN_FETCH_INTERVAL = 10000; // 10 seconds minimum between requests
+  private readonly MIN_FETCH_INTERVAL = 5000; // 10 seconds minimum between requests
   private readonly CACHE_DURATION = 300000; // 5 minutes cache duration
   private cachedRates: { [key: string]: { rates: any; timestamp: number } } = {};
   rateLimitError = false;
@@ -46,9 +47,11 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
       this.availableCurrencies.forEach(c => {
         this.selectedCurrencies[c] = c !== this.baseCurrency;
       });
+
     }
 
     this.fetchRates();
+    this.preloadAllRates();
     // Increased refresh interval to 5 minutes to respect rate limits
     this.refreshInterval = setInterval(() => this.fetchRates(), 300000);
   }
@@ -67,6 +70,10 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
   }
 
   onBaseCurrencyChange() {
+    // If there was a previous base, re-check it
+    if (this.previousBaseCurrency && this.previousBaseCurrency !== this.baseCurrency) {
+      this.selectedCurrencies[this.previousBaseCurrency] = true;
+    }
     // When base currency changes, update selected currencies to exclude the new base
     this.availableCurrencies.forEach(c => {
       if (c === this.baseCurrency) {
@@ -75,20 +82,75 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
         this.selectedCurrencies[c] = true; // Add new currencies if they don't exist
       }
     });
+    this.previousBaseCurrency = this.baseCurrency;
+
     this.saveSelectedCurrencies();
     this.fetchRates();
   }
 
-  fetchRates() {
+  async preloadAllRates() {
+    console.log('🚀 Starting background rate preload...');
+    const originalBase = this.baseCurrency;
+  
+    for (const currency of this.availableCurrencies) {
+      if (currency === originalBase) continue; // skip current base
+  
+      // Skip if already cached recently
+      const cached = this.cachedRates[currency];
+      const now = Date.now();
+      if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
+        console.log(`✅ Skipping ${currency}, already cached.`);
+        continue;
+      }
+  
+      try {
+        console.log(`🔄 Preloading rates for base: ${currency}`);
+        await this.fetchAndCacheRates(currency);
+        await this.delay(6000); // small gap to avoid API throttling
+      } catch (err) {
+        console.warn(`⚠️ Failed to preload ${currency}:`, err);
+      }
+    }
+  
+    console.log('✅ Preloading finished.');
+  }
+
+  fetchAndCacheRates(base: string): Promise<void> {
     const now = Date.now();
-    
-    // Check if we're hitting rate limits
+    const symbols = this.availableCurrencies.filter(c => c !== base).join(',');
+  
+    return new Promise((resolve, reject) => {
+      this.http
+        .get<any>(`https://api.fxratesapi.com/latest?base=${base}&symbols=${symbols}`)
+        .subscribe({
+          next: (data) => {
+            this.cachedRates[base] = {
+              rates: data.rates,
+              timestamp: now
+            };
+            console.log(`✅ Cached rates for ${base}`);
+            resolve();
+          },
+          error: (err) => reject(err)
+        });
+    });
+  }
+  
+  
+  // Simple helper for async delay
+  delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  fetchRates(): Promise<void> {
+    const now = Date.now();
+  
+    // Check rate limit
     if (now - this.lastFetchTime < this.MIN_FETCH_INTERVAL) {
       console.log('Rate limit: Too many requests, skipping fetch');
-      return;
+      return Promise.resolve();
     }
-    
-    // Check cache first
+  
     const cacheKey = this.baseCurrency;
     const cached = this.cachedRates[cacheKey];
     if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
@@ -97,50 +159,75 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
       this.lastUpdated = new Date(cached.timestamp);
       this.updateDisplayRates();
       this.rateLimitError = false;
-      return;
+      return Promise.resolve();
     }
-    
+  
     this.loading = true;
     this.lastFetchTime = now;
-    
-    // Get all currencies except the base currency as symbols
+  
     const symbols = this.availableCurrencies.filter(c => c !== this.baseCurrency).join(',');
-    
-    // Using free API without authentication
-    this.http.get<any>(`https://api.fxratesapi.com/latest?base=${this.baseCurrency}&symbols=${symbols}`)
-      .subscribe({
-        next: (data) => {
-          this.rates = data.rates;
-          this.lastUpdated = new Date();
-          
-          // Cache the rates
-          this.cachedRates[cacheKey] = {
-            rates: data.rates,
-            timestamp: now
-          };
-          
-          this.updateDisplayRates();
-          this.loading = false;
-          this.rateLimitError = false;
-        },
-        error: (err) => {
-          console.error('汇率获取失败', err);
-          this.loading = false;
-          
-          // Check if it's a rate limit error
-          if (err.status === 429 || err.status === 403) {
-            this.rateLimitError = true;
-            console.warn('Rate limit exceeded. Using cached data if available.');
-            
-            // Try to use cached data if available
-            if (cached) {
-              this.rates = cached.rates;
-              this.lastUpdated = new Date(cached.timestamp);
-              this.updateDisplayRates();
+  
+    console.log(`🔄 Fetching API for ${this.baseCurrency}...`);
+  
+    return new Promise((resolve, reject) => {
+      this.http
+        .get<any>(`https://api.fxratesapi.com/latest?base=${this.baseCurrency}&symbols=${symbols}`)
+        .subscribe({
+          next: (data) => {
+            this.rates = data.rates;
+            this.lastUpdated = new Date();
+  
+            // Cache it
+            this.cachedRates[cacheKey] = {
+              rates: data.rates,
+              timestamp: now
+            };
+  
+            this.updateDisplayRates();
+            this.loading = false;
+            this.rateLimitError = false;
+  
+            console.log(`✅ Rates loaded for ${this.baseCurrency}`);
+            resolve(); // ✅ resolves after HTTP success
+          },
+          error: async (err) => {  // 👈 make it async
+            console.error('❌ 汇率获取失败', err);
+            this.loading = false;
+  
+            if (err.status === 429 || err.status === 403) {
+              this.rateLimitError = true;
+              console.warn('Rate limit exceeded. Using cached data if available.');
+              if (cached) {
+                this.rates = cached.rates;
+                this.lastUpdated = new Date(cached.timestamp);
+                this.updateDisplayRates();
+              }
             }
+            if (this.previousBaseCurrency && this.previousBaseCurrency !== this.baseCurrency) {
+              console.warn(`⚠️ Rolling back from ${this.baseCurrency} to ${this.previousBaseCurrency}`);
+  
+              const failedCurrency = this.baseCurrency; // remember the failed one
+              this.rollbackToPreviousBase(); // revert selection/UI state
+  
+              // Notify user (replace with toast if preferred)
+              alert(`无法获取 ${failedCurrency} 的汇率，已回滚到 ${this.previousBaseCurrency}。正在重试...`);
+  
+              // Try one retry after rollback
+              try {
+                await this.fetchRates();
+                console.log(`✅ Retry succeeded after rollback to ${this.previousBaseCurrency}`);
+                resolve();
+                return;
+              } catch (retryErr) {
+                console.error(`❌ Retry failed again for ${this.previousBaseCurrency}`, retryErr);
+                alert(`重试失败，请检查网络或API限制。`);
+              }
+            }
+  
+            reject(err); // ✅ reject if error
           }
-        }
-      });
+        });
+    });
   }
 
   updateDisplayRates() {
@@ -159,5 +246,31 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
   forceRefreshRates() {
     this.lastFetchTime = 0; // Reset rate limit timer
     this.fetchRates();
+  }
+
+  rollbackToPreviousBase() {
+    if (this.previousBaseCurrency) {
+      console.log(`↩️ Rolling back to ${this.previousBaseCurrency}`);
+      this.baseCurrency = this.previousBaseCurrency;
+  
+      // Re-enable previous base
+      this.availableCurrencies.forEach(c => {
+        this.selectedCurrencies[c] = c !== this.baseCurrency;
+      });
+    }
+  
+    // Notify user
+    alert(`无法获取 ${this.baseCurrency} 的汇率，已回滚到 ${this.previousBaseCurrency || '上一个币种'}。`);
+  }
+
+  async retryFetchRates() {
+    console.log(`🔁 Retrying fetch for ${this.baseCurrency}...`);
+    try {
+      await this.fetchRates();
+      console.log('✅ Retry succeeded!');
+    } catch (retryErr) {
+      console.error('❌ Retry also failed.', retryErr);
+      alert(`重试获取 ${this.baseCurrency} 汇率失败，请检查网络或API连接。`);
+    }
   }
 }
