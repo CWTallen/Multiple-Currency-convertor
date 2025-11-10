@@ -70,6 +70,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-wrap: wrap;
 
   label {
     font-weight: 600;
@@ -80,6 +81,7 @@
 
   input {
     width: 200px;
+    max-width: 100%;
     padding: 0.75rem;
     border: 2px solid #e5e7eb;
     border-radius: 12px;
@@ -87,6 +89,7 @@
     transition: all 0.3s ease;
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(10px);
+    box-sizing: border-box;
 
     &:focus {
       outline: none;
@@ -100,6 +103,18 @@
     }
   }
 }
+
+@media (max-width: 640px) {
+  .input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .input-group input {
+    width: 100%;
+  }
+}
+
 
 .direction-selector {
   display: flex;
