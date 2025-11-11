@@ -5,7 +5,7 @@
     <!-- 金额输入 -->
     <div class="input-group">
       <label>Amount：</label>
-      <input type="number" [(ngModel)]="amount" min="0" />
+      <input type="number" [(ngModel)]="amount" min="0"/>
     </div>
 
     <!-- 基础货币选择 -->
@@ -20,10 +20,11 @@
     <div class="currency-selection">
       <label>Select target currencies to display：</label>
       <div class="currency-grid">
-        <div class="currency-item" *ngFor="let cur of availableCurrencies">
-          <input type="checkbox" [(ngModel)]="selectedCurrencies[cur]" (change)="saveSelectedCurrencies()" 
-                 [disabled]="cur === baseCurrency" />
-          <span [class.disabled]="cur === baseCurrency">{{ cur }}</span>
+        <div class="currency-item" *ngFor="let cur of availableCurrencies" [class.disabled]="cur === baseCurrency"
+             (click)="toggleCurrency(cur)">
+          <input type="checkbox" [(ngModel)]="selectedCurrencies[cur]" (change)="saveSelectedCurrencies()"
+                 [disabled]="cur === baseCurrency" (click)="$event.stopPropagation()"/>
+          <span> {{ cur }}  </span>
         </div>
       </div>
     </div>
@@ -35,7 +36,7 @@
 
     <!-- 加载提示 -->
     <div *ngIf="loading" class="loading">Loading exchange rates...</div>
-    
+
     <!-- 速率限制警告 -->
     <div *ngIf="this.rateLimitError" class="rate-limit-warning">
       ⚠️ Rate limit reached. Using cached data. Please wait before refreshing again.
@@ -46,7 +47,8 @@
       <div class="rate-item" *ngFor="let item of displayRates">
         <span class="currency-code">{{ item.label }}</span>
         <span class="converted-amount">{{ (amount * item.value) | number:'1.2-2':'en-US' }}</span>
-        <span class="rate-info">(1 {{ baseCurrency }} = {{ item.value | number:'1.4-4':'en-US' }} {{ item.label }})</span>
+        <span class="rate-info">(1 {{ baseCurrency }} = {{ item.value | number:'1.4-4':'en-US' }} {{ item.label }}
+          )</span>
       </div>
     </div>
 

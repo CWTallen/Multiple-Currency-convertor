@@ -1,7 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import {Component, OnInit, OnDestroy} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-currency-converter',
@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 export class CurrencyConverterComponent implements OnInit, OnDestroy {
   amount = 1;
   baseCurrency = 'EUR';
-  availableCurrencies = ['EUR', 'HKD', 'CNY', 'USD', 'JPY', 'GBP','CHF'];
+  availableCurrencies = ['EUR', 'HKD', 'CNY', 'USD', 'JPY', 'GBP', 'CHF'];
   selectedCurrencies: any = {};
   rates: any = {};
   displayRates: { label: string; value: number }[] = [];
@@ -29,7 +29,8 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
   private cachedRates: { [key: string]: { rates: any; timestamp: number } } = {};
   rateLimitError = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+  }
 
   ngOnInit() {
     // Note: localStorage won't work in server-side rendering
@@ -91,10 +92,10 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
   async preloadAllRates() {
     console.log('🚀 Starting background rate preload...');
     const originalBase = this.baseCurrency;
-  
+
     for (const currency of this.availableCurrencies) {
       if (currency === originalBase) continue; // skip current base
-  
+
       // Skip if already cached recently
       const cached = this.cachedRates[currency];
       const now = Date.now();
@@ -102,7 +103,7 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
         console.log(`✅ Skipping ${currency}, already cached.`);
         continue;
       }
-  
+
       try {
         console.log(`🔄 Preloading rates for base: ${currency}`);
         await this.fetchAndCacheRates(currency);
@@ -111,14 +112,14 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
         console.warn(`⚠️ Failed to preload ${currency}:`, err);
       }
     }
-  
+
     console.log('✅ Preloading finished.');
   }
 
   fetchAndCacheRates(base: string): Promise<void> {
     const now = Date.now();
     const symbols = this.availableCurrencies.filter(c => c !== base).join(',');
-  
+
     return new Promise((resolve, reject) => {
       this.http
         .get<any>(`https://api.fxratesapi.com/latest?base=${base}&symbols=${symbols}`)
@@ -135,8 +136,8 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
         });
     });
   }
-  
-  
+
+
   // Simple helper for async delay
   delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -144,13 +145,13 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
 
   fetchRates(): Promise<void> {
     const now = Date.now();
-  
+
     // Check rate limit
     if (now - this.lastFetchTime < this.MIN_FETCH_INTERVAL) {
       console.log('Rate limit: Too many requests, skipping fetch');
       return Promise.resolve();
     }
-  
+
     const cacheKey = this.baseCurrency;
     const cached = this.cachedRates[cacheKey];
     if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
@@ -161,14 +162,14 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
       this.rateLimitError = false;
       return Promise.resolve();
     }
-  
+
     this.loading = true;
     this.lastFetchTime = now;
-  
+
     const symbols = this.availableCurrencies.filter(c => c !== this.baseCurrency).join(',');
-  
+
     console.log(`🔄 Fetching API for ${this.baseCurrency}...`);
-  
+
     return new Promise((resolve, reject) => {
       this.http
         .get<any>(`https://api.fxratesapi.com/latest?base=${this.baseCurrency}&symbols=${symbols}`)
@@ -176,24 +177,24 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
           next: (data) => {
             this.rates = data.rates;
             this.lastUpdated = new Date();
-  
+
             // Cache it
             this.cachedRates[cacheKey] = {
               rates: data.rates,
               timestamp: now
             };
-  
+
             this.updateDisplayRates();
             this.loading = false;
             this.rateLimitError = false;
-  
+
             console.log(`✅ Rates loaded for ${this.baseCurrency}`);
             resolve(); // ✅ resolves after HTTP success
           },
           error: async (err) => {  // 👈 make it async
             console.error('❌ 汇率获取失败', err);
             this.loading = false;
-  
+
             if (err.status === 429 || err.status === 403) {
               this.rateLimitError = true;
               console.warn('Rate limit exceeded. Using cached data if available.');
@@ -205,13 +206,13 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
             }
             if (this.previousBaseCurrency && this.previousBaseCurrency !== this.baseCurrency) {
               console.warn(`⚠️ Rolling back from ${this.baseCurrency} to ${this.previousBaseCurrency}`);
-  
+
               const failedCurrency = this.baseCurrency; // remember the failed one
               this.rollbackToPreviousBase(); // revert selection/UI state
-  
+
               // Notify user (replace with toast if preferred)
               alert(`无法获取 ${failedCurrency} 的汇率，已回滚到 ${this.previousBaseCurrency}。正在重试...`);
-  
+
               // Try one retry after rollback
               try {
                 await this.fetchRates();
@@ -223,7 +224,7 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
                 alert(`重试失败，请检查网络或API限制。`);
               }
             }
-  
+
             reject(err); // ✅ reject if error
           }
         });
@@ -237,7 +238,7 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
         // The API returns rates from base currency to target currency
         // So if base is EUR and target is USD, rate is EUR/USD
         const rate = this.rates[cur];
-        this.displayRates.push({ label: cur, value: rate });
+        this.displayRates.push({label: cur, value: rate});
       }
     }
   }
@@ -252,13 +253,13 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
     if (this.previousBaseCurrency) {
       console.log(`↩️ Rolling back to ${this.previousBaseCurrency}`);
       this.baseCurrency = this.previousBaseCurrency;
-  
+
       // Re-enable previous base
       this.availableCurrencies.forEach(c => {
         this.selectedCurrencies[c] = c !== this.baseCurrency;
       });
     }
-  
+
     // Notify user
     alert(`无法获取 ${this.baseCurrency} 的汇率，已回滚到 ${this.previousBaseCurrency || '上一个币种'}。`);
   }
@@ -273,4 +274,11 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
       alert(`重试获取 ${this.baseCurrency} 汇率失败，请检查网络或API连接。`);
     }
   }
+
+  toggleCurrency(cur: string): void {
+    if (cur === this.baseCurrency) return; // ignore disabled
+    this.selectedCurrencies[cur] = !this.selectedCurrencies[cur];
+    this.saveSelectedCurrencies();
+  }
+
 }
