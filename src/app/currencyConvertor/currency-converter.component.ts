@@ -87,6 +87,7 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
 
     this.saveSelectedCurrencies();
     this.fetchRates();
+    this.preloadAllRates();
   }
 
   async preloadAllRates() {
