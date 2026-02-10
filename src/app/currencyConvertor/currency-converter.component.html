@@ -8,6 +8,11 @@
       <input type="number" [(ngModel)]="amount" min="0"/>
     </div>
 
+    <!-- Reset -->
+    <button class="reset-button" (click)="resetButton()">
+      Reset Currency and Amount
+    </button>
+
     <!-- 基础货币选择 -->
     <div class="direction-selector">
       <label>Base Currency：</label>

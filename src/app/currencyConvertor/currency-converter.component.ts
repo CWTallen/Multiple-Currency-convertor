@@ -250,6 +250,16 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
     this.fetchRates();
   }
 
+  resetButton() {
+    this.baseCurrency = 'EUR';
+    this.amount = 1;
+    this.availableCurrencies.forEach(c => {
+      this.selectedCurrencies[c] = c !== this.baseCurrency;
+    });
+    console.debug("Reset Currency to EUR and Amount to 1")
+    this.forceRefreshRates();
+  }
+
   rollbackToPreviousBase() {
     if (this.previousBaseCurrency) {
       console.log(`↩️ Rolling back to ${this.previousBaseCurrency}`);
