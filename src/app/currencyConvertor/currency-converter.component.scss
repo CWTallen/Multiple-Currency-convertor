@@ -203,6 +203,47 @@
 }
 
 
+.reset-button {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.8s ease-out 1s both;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+
+    &::before {
+      left: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
 .refresh-button {
   width: 100%;
   padding: 1rem;
@@ -471,6 +512,13 @@
     border-radius: 10px;
   }
 
+  .reset-button {
+    padding: 0.8rem;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 10px;
+  }
+
   .rates-display {
     .rate-item {
       padding: 0.8rem;
@@ -568,6 +616,12 @@
         }
       }
     }
+  }
+
+  .reset-button {
+    padding: 0.7rem;
+    font-size: 0.95rem;
+    margin-bottom: 0.8rem;
   }
 
   .refresh-button {
