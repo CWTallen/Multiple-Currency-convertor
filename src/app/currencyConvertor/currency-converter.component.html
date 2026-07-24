@@ -50,11 +50,54 @@
     <!-- 汇率显示 -->
     <div *ngIf="!loading" class="rates-display">
       <div class="rate-item" *ngFor="let item of displayRates">
-        <span class="currency-code">{{ item.label }}</span>
-        <span class="converted-amount">{{ (amount * item.value) | number:'1.2-2':'en-US' }}</span>
-        <span class="rate-info">(1 {{ baseCurrency }} = {{ item.value | number:'1.4-4':'en-US' }} {{ item.label }}
-          )</span>
+        <div class="rate-main">
+          <span class="currency-code">{{ item.label }}</span>
+          <span class="converted-amount">{{ (amount * item.value) | number:'1.2-2':'en-US' }}</span>
+          <span class="rate-info">(1 {{ baseCurrency }} = {{ item.value | number:'1.4-4':'en-US' }} {{ item.label }}
+            )</span>
+        </div>
+        <div class="rate-actions">
+          <span class="rate-trend" [class.trend-up]="item.trend === 'up'" [class.trend-down]="item.trend === 'down'">
+            {{ item.trend === 'up' ? '▲' : item.trend === 'down' ? '▼' : '' }}
+          </span>
+          <button class="swap-button" (click)="swapToBase(item.label)" title="Make {{ item.label }} the base currency">⇄</button>
+          <button class="chart-button" (click)="toggleHistoryChart(item.label)" title="View 30-day history">📈</button>
+        </div>
       </div>
+    </div>
+
+    <!-- 历史汇率图表 -->
+    <div class="history-chart" *ngIf="chartCurrency">
+      <div class="history-chart-header">
+        <span>{{ baseCurrency }} → {{ chartCurrency }} (last 30 days)</span>
+        <button class="close-chart" (click)="chartCurrency = null">✕</button>
+      </div>
+      <div *ngIf="chartLoading" class="history-status">Loading history...</div>
+      <div *ngIf="chartError" class="history-status">Failed to load history.</div>
+      <svg *ngIf="!chartLoading && !chartError && chartPoints.length > 1"
+           [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight" class="history-svg">
+        <!-- axis lines -->
+        <line [attr.x1]="chartMargin.left" [attr.y1]="chartMargin.top"
+              [attr.x2]="chartMargin.left" [attr.y2]="chartMargin.top + chartPlotHeight" class="chart-axis"/>
+        <line [attr.x1]="chartMargin.left" [attr.y1]="chartMargin.top + chartPlotHeight"
+              [attr.x2]="chartMargin.left + chartPlotWidth" [attr.y2]="chartMargin.top + chartPlotHeight" class="chart-axis"/>
+
+        <!-- y-axis ticks -->
+        <ng-container *ngFor="let tick of chartYAxisTicks">
+          <line [attr.x1]="chartMargin.left - 3" [attr.y1]="tick.y"
+                [attr.x2]="chartMargin.left" [attr.y2]="tick.y" class="chart-tick"/>
+          <text [attr.x]="chartMargin.left - 6" [attr.y]="tick.y + 3" text-anchor="end" class="chart-axis-label">{{ tick.label }}</text>
+        </ng-container>
+
+        <!-- x-axis ticks -->
+        <ng-container *ngFor="let tick of chartXAxisTicks">
+          <line [attr.x1]="tick.x" [attr.y1]="chartMargin.top + chartPlotHeight"
+                [attr.x2]="tick.x" [attr.y2]="chartMargin.top + chartPlotHeight + 3" class="chart-tick"/>
+          <text [attr.x]="tick.x" [attr.y]="chartMargin.top + chartPlotHeight + 14" text-anchor="middle" class="chart-axis-label">{{ tick.label }}</text>
+        </ng-container>
+
+        <polyline [attr.points]="chartPolylinePoints" fill="none" stroke="#3b82f6" stroke-width="2"/>
+      </svg>
     </div>
 
     <!-- 更新时间 -->
