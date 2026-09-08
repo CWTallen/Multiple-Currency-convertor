@@ -16,11 +16,19 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
   availableCurrencies = ['EUR', 'HKD', 'CNY', 'USD', 'JPY', 'GBP', 'CHF'];
   selectedCurrencies: any = {};
   rates: any = {};
-  displayRates: { label: string; value: number }[] = [];
+  previousRates: any = {};
+  private ratesBase: string | null = null;
+  displayRates: { label: string; value: number; trend: 'up' | 'down' | 'flat' }[] = [];
   loading = false;
   lastUpdated: Date | null = null;
   refreshInterval: any;
   previousBaseCurrency: string | null = null;
+
+  // Historical chart state
+  chartCurrency: string | null = null;
+  chartLoading = false;
+  chartError = false;
+  chartPoints: { date: string; value: number }[] = [];
 
   // Rate limiting and caching
   private lastFetchTime: number = 0;
@@ -34,6 +42,7 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.previousBaseCurrency = this.baseCurrency;
     // Note: localStorage won't work in server-side rendering
     if (typeof window !== 'undefined' && window.localStorage) {
       const saved = localStorage.getItem('selectedCurrencies');
@@ -66,6 +75,7 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
   }
 
   onBaseCurrencyChange() {
+    this.chartCurrency = null; // history chart is relative to the old base
     // If there was a previous base, re-check it
     if (this.previousBaseCurrency && this.previousBaseCurrency !== this.baseCurrency) {
       this.selectedCurrencies[this.previousBaseCurrency] = true;
@@ -153,6 +163,17 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  // Applies a fresh set of rates and remembers the prior set for trend comparison.
+  // Trend is only meaningful when comparing rates for the same base currency,
+  // so a base switch starts the trend indicator fresh.
+  private applyRates(newRates: any, updated: Date, forBase: string): void {
+    this.previousRates = this.ratesBase === forBase ? this.rates : {};
+    this.rates = newRates;
+    this.ratesBase = forBase;
+    this.lastUpdated = updated;
+    this.updateDisplayRates();
+  }
+
   async fetchRates(): Promise<void> {
     const now = Date.now();
 
@@ -166,9 +187,7 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
     const cached = this.cachedRates[cacheKey];
     if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
       console.log('Using cached rates');
-      this.rates = cached.rates;
-      this.lastUpdated = new Date(cached.timestamp);
-      this.updateDisplayRates();
+      this.applyRates(cached.rates, new Date(cached.timestamp), cacheKey);
       this.rateLimitError = false;
       return;
     }
@@ -180,8 +199,7 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
 
     try {
       const data = await this.requestRates(this.baseCurrency);
-      this.rates = data.rates;
-      this.lastUpdated = new Date();
+      this.applyRates(data.rates, new Date(), cacheKey);
 
       // Cache it
       this.cachedRates[cacheKey] = {
@@ -189,7 +207,6 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
         timestamp: now
       };
 
-      this.updateDisplayRates();
       this.loading = false;
       this.rateLimitError = false;
 
@@ -202,9 +219,7 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
         this.rateLimitError = true;
         console.warn('Rate limit exceeded. Using cached data if available.');
         if (cached) {
-          this.rates = cached.rates;
-          this.lastUpdated = new Date(cached.timestamp);
-          this.updateDisplayRates();
+          this.applyRates(cached.rates, new Date(cached.timestamp), cacheKey);
         }
       }
       if (this.previousBaseCurrency && this.previousBaseCurrency !== this.baseCurrency) {
@@ -238,7 +253,13 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
         // The API returns rates from base currency to target currency
         // So if base is EUR and target is USD, rate is EUR/USD
         const rate = this.rates[cur];
-        this.displayRates.push({label: cur, value: rate});
+        const previous = this.previousRates[cur];
+        let trend: 'up' | 'down' | 'flat' = 'flat';
+        if (typeof rate === 'number' && typeof previous === 'number') {
+          if (rate > previous) trend = 'up';
+          else if (rate < previous) trend = 'down';
+        }
+        this.displayRates.push({label: cur, value: rate, trend});
       }
     }
   }
@@ -252,12 +273,14 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
   resetButton() {
     this.baseCurrency = 'EUR';
     this.amount = 1;
+    this.chartCurrency = null;
     this.resetSelectedCurrenciesForBase();
     console.debug("Reset Currency to EUR and Amount to 1")
     this.forceRefreshRates();
   }
 
   rollbackToPreviousBase() {
+    this.chartCurrency = null;
     if (this.previousBaseCurrency) {
       console.log(`↩️ Rolling back to ${this.previousBaseCurrency}`);
       this.baseCurrency = this.previousBaseCurrency;
@@ -291,6 +314,122 @@ export class CurrencyConverterComponent implements OnInit, OnDestroy {
     if (cur === this.baseCurrency) return; // ignore disabled
     this.selectedCurrencies[cur] = !this.selectedCurrencies[cur];
     this.saveSelectedCurrencies();
+  }
+
+  // Makes a displayed target currency the new base, and puts the old base back as a target
+  swapToBase(cur: string): void {
+    if (cur === this.baseCurrency) return;
+    this.baseCurrency = cur;
+    this.onBaseCurrencyChange();
+  }
+
+  // Toggles a 30-day historical rate chart for a target currency against the current base
+  async toggleHistoryChart(cur: string): Promise<void> {
+    if (this.chartCurrency === cur) {
+      this.chartCurrency = null;
+      return;
+    }
+
+    this.chartCurrency = cur;
+    this.chartLoading = true;
+    this.chartError = false;
+    this.chartPoints = [];
+
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    const fmt = (d: Date) => d.toISOString().split('T')[0];
+
+    try {
+      const data = await this.requestHistory(this.baseCurrency, cur, fmt(start), fmt(end));
+      this.chartPoints = Object.entries<any>(data.rates)
+        .map(([date, rates]) => ({date, value: rates[cur]}))
+        .filter(p => typeof p.value === 'number')
+        .sort((a, b) => a.date.localeCompare(b.date));
+    } catch (err) {
+      console.warn(`⚠️ Failed to load history for ${cur}:`, err);
+      this.chartError = true;
+    } finally {
+      this.chartLoading = false;
+    }
+  }
+
+  private requestHistory(base: string, cur: string, startDate: string, endDate: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.http
+        .get<any>(`https://api.fxratesapi.com/timeseries?base=${base}&currencies=${cur}&start_date=${startDate}&end_date=${endDate}`)
+        .subscribe({next: resolve, error: reject});
+    });
+  }
+
+  // History chart geometry: a fixed viewBox with margins reserved for axis labels
+  readonly chartWidth = 320;
+  readonly chartHeight = 130;
+  readonly chartMargin = {left: 45, right: 10, top: 10, bottom: 24};
+
+  get chartPlotWidth(): number {
+    return this.chartWidth - this.chartMargin.left - this.chartMargin.right;
+  }
+
+  get chartPlotHeight(): number {
+    return this.chartHeight - this.chartMargin.top - this.chartMargin.bottom;
+  }
+
+  private get chartValueRange(): { min: number; max: number } {
+    const values = this.chartPoints.map(p => p.value);
+    return {min: Math.min(...values), max: Math.max(...values)};
+  }
+
+  // SVG polyline points for the history chart, plotted within the margin box
+  get chartPolylinePoints(): string {
+    if (this.chartPoints.length < 2) return '';
+
+    const {min, max} = this.chartValueRange;
+    const range = max - min || 1;
+    const {left, top} = this.chartMargin;
+    const plotWidth = this.chartPlotWidth;
+    const plotHeight = this.chartPlotHeight;
+    const step = plotWidth / (this.chartPoints.length - 1);
+
+    return this.chartPoints
+      .map((p, i) => {
+        const x = left + i * step;
+        const y = top + plotHeight - ((p.value - min) / range) * plotHeight;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+  }
+
+  // Y-axis ticks at the min, midpoint, and max rate
+  get chartYAxisTicks(): { y: number; label: string }[] {
+    if (this.chartPoints.length < 2) return [];
+
+    const {min, max} = this.chartValueRange;
+    const mid = (min + max) / 2;
+    const {top} = this.chartMargin;
+    const plotHeight = this.chartPlotHeight;
+    const toY = (v: number) => top + plotHeight - ((v - min) / (max - min || 1)) * plotHeight;
+
+    return [
+      {y: toY(max), label: max.toFixed(4)},
+      {y: toY(mid), label: mid.toFixed(4)},
+      {y: toY(min), label: min.toFixed(4)},
+    ];
+  }
+
+  // X-axis ticks at the first, middle, and last date in the range
+  get chartXAxisTicks(): { x: number; label: string }[] {
+    if (this.chartPoints.length < 2) return [];
+
+    const {left} = this.chartMargin;
+    const plotWidth = this.chartPlotWidth;
+    const lastIndex = this.chartPoints.length - 1;
+    const step = plotWidth / lastIndex;
+    const midIndex = Math.round(lastIndex / 2);
+    const shortDate = (iso: string) => iso.slice(5, 10); // MM-DD
+
+    const indices = Array.from(new Set([0, midIndex, lastIndex]));
+    return indices.map(i => ({x: left + i * step, label: shortDate(this.chartPoints[i].date)}));
   }
 
 }
